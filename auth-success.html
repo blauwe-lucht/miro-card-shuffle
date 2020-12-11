@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <style>
+      @font-face {
+        font-family: 'Formular';
+        src: url('https://miro.com/app/static/static/fonts/general/FormularRegular/formular-regular.4b9930.woff2');
+      }
+	  
+      body {
+        font-family: 'Formular';
+      }
+    </style>
+  </head>
   <body>
     <h1>App installed</h1>
-    <script>
-      if (window.opener) {
-        // Close this window
-        window.opener.miroAuthorized()
-      }
-    </script>
+    <p>Read the <a href="manual.html">manual</a>.
   </body>
 </html>
