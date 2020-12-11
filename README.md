@@ -12,4 +12,4 @@ See [this video](https://vimeo.com/489767385) for a short demo.
 
 ## Documentation
 
-The documentation can be found [here](https://todo).
+The documentation can be found [here](https://blauwe-lucht.nl/miro/manual.html).
