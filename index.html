@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://miro.com/app/static/sdk.1.1.js"></script>
+    <script>
+    
+    // A CardSideLayer stores a widget together with the offset from the 
+    // largest widget in the group.
+    class CardSideLayer {
+      constructor(widget, top, left) {
+        this.widget = widget;
+        this.top = top;
+        this.left = left;
+      }
+    }
+    
+    // A CardSide contains all widgets that share a group that represents a
+    // playing card side.
+    class CardSide {
+      constructor() {
+        this.layers = new Array();
+      }
+      
+      findLargestWidget(widgets) {
+        var largestWidget = 0;
+        var largestWidgetSize = 0;
+        for (let w of widgets) {
+          if (w.bounds.width * w.bounds.height > largestWidgetSize) {
+            largestWidgetSize = w.bounds.width * w.bounds.height;
+            largestWidget = w;
+          }
+        }
+        return largestWidget;
+      }
+      
+      // Make this card side a group of a single widget.
+      setWidget(widget) {
+        assert(this.layers.length == 0, "Adding more widgets is not allowed (coding error).");
+        
+        this.layers.push(new CardSideLayer(widget, 0, 0));
+      }
+      
+      // Make this card side a group of multiple widgets.
+      setWidgets(widgets) {
+        assert(this.layers.length == 0, "Adding more widgets is not allowed (coding error).");
+        
+        // For each widget in the group we will store the offset (top, left) from the largest widget.
+        var largestWidget = this.findLargestWidget(widgets);
+        for (let w of widgets) {
+          var top = w.bounds.top - largestWidget.bounds.top;
+          var left = w.bounds.left - largestWidget.bounds.left;
+          var item = new CardSideLayer(w, top, left);
+          this.layers.push(item);
+        }
+		
+        // We don't get any z-order information from Miro, so we assume that
+        // the widgets need to be drawn in creation order (lower id first).
+        this.layers.sort(function(item1, item2) {
+          return item1.widget.id - item2.widget.id;
+        });
+      }
+      
+      isFrontSide() {
+        for (let w of this.layers) {
+          if (w.widget.text || w.widget.type == "TEXT") {
+            return true;
+          }
+        }
+      }
+    }
+    
+    function assert(result, description) {
+      if (!result) {
+        alert(description);
+        throw new Error(description);
+      }
+    }
+    
+    function getMinX(widgets) {
+      var minX = Number.MAX_SAFE_INTEGER;
+      for (let w of widgets) {
+        if (w.bounds.left < minX) {
+          minX = w.bounds.left;
+        }
+      }
+      return minX;
+    }
+    
+    function getMinY(widgets) {
+      var minY = Number.MAX_SAFE_INTEGER;
+      for (let w of widgets) {
+        if (w.bounds.top < minY) {
+          minY = w.bounds.top;
+        }
+      }
+      return minY;
+    }
+    
+    function getBackCardSides(cardSides) {
+      var backCardSides = new Array();
+      for (let cardSide of cardSides) {
+        if (!cardSide.isFrontSide()) {
+          backCardSides.push(cardSide);
+        }
+      }
+      return backCardSides;
+    }
+    
+    function getFrontCardSides(cardSides) {
+      var frontCardSides = new Array();
+      for (let cardSide of cardSides) {
+        if (cardSide.isFrontSide()) {
+          frontCardSides.push(cardSide);
+        }
+      }
+      return frontCardSides;
+    }
+    
+    function convertToCardSides(widgets) {
+      var groups = new Array();
+      var groupIdToWidgetsMap = {};
+      
+      // Collect arrays of grouped widgets and convert non-grouped widgets to groups of single widgets.
+      for (let w of widgets) {
+        if (w.groupId) {
+          if (!groupIdToWidgetsMap[w.groupId]) {
+            groupIdToWidgetsMap[w.groupId] = new Array();
+          }
+          groupIdToWidgetsMap[w.groupId].push(w);
+        }
+        else {
+          var group = new CardSide();
+          group.setWidget(w);
+          groups.push(group);
+        }
+      }
+      
+      // Now convert the arrays of widgets to groups of widgets.
+      for (var groupId in groupIdToWidgetsMap) {
+        var group = new CardSide();
+        group.setWidgets(groupIdToWidgetsMap[groupId]);
+        groups.push(group);
+      }
+      
+      return groups;
+    }
+    
+    function stackWidgets(cardSides, targetX, targetY) {
+      for (let cardSide of cardSides) {
+        for (let cardSideLayer of cardSide.layers) {
+          var diffX = targetX - cardSideLayer.widget.bounds.left + cardSideLayer.left;
+          var diffY = targetY - cardSideLayer.widget.bounds.top + cardSideLayer.top;
+        
+          miro.board.widgets.transformDelta(cardSideLayer.widget, diffX, diffY);
+        }
+      }
+    }
+    
+    function getRandomInt(max) {
+      return Math.floor(Math.random() * Math.floor(max));
+    }
+    
+    async function shuffleCards(frontCardSides, backCardSides) {
+      assert(frontCardSides.length == backCardSides.length, "Different number of front and back sides.");
+      
+      var order = new Array(frontCardSides.length);
+      order.fill(-1);
+      for (let i = 0; i < frontCardSides.length; i++) {
+        var orderIndex = getRandomInt(frontCardSides.length);
+        while (true) {
+          if (order[orderIndex] == -1) {
+            order[orderIndex] = i;
+            break;
+          }
+          orderIndex = (orderIndex + 1) % frontCardSides.length;
+        }
+      }
+      
+      for (let i = 0; i < frontCardSides.length; i++) {
+        for (let cardSideLayer of frontCardSides[order[i]].layers) {
+          await miro.board.widgets.bringForward(cardSideLayer.widget);
+        }
+        for (let cardSideLayer of backCardSides[order[i]].layers) {
+          await miro.board.widgets.bringForward(cardSideLayer.widget);
+        }
+      }
+    }
+    
+    miro.onReady(() => {
+      miro.initialize({
+        extensionPoints: {
+          bottomBar: {
+            title: 'CardShuffle',
+            svgIcon: '<polygon points="12,2 18,12 12,22 6,12" style="fill:black;stroke:black;stroke-width:1"/>',
+            onClick: async() => {
+              var selectedWidgets = await miro.board.selection.get();
+              if (!selectedWidgets || selectedWidgets.length == 0) {
+                // The url is relative to the root of the site, so we need to specify the full path.
+                miro.board.ui.openLeftSidebar("miro/manual.html");
+                return;
+              }
+              var targetX = getMinX(selectedWidgets);
+              var targetY = getMinY(selectedWidgets);
+              
+              var cardSides = convertToCardSides(selectedWidgets);
+              
+              stackWidgets(cardSides, targetX, targetY);
+
+              var backCardSides = getBackCardSides(cardSides);
+              var frontCardSides = getFrontCardSides(cardSides);
+              assert(frontCardSides.length == backCardSides.length, "Different number of front and back sides.");
+              await shuffleCards(frontCardSides, backCardSides);
+            }
+          }
+        }
+      })
+    })
+    </script>
+</head>
+</html>

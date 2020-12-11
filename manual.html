@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://miro.com/app/static/sdk.1.1.js"></script>
+
+    <style>
+      @font-face {
+        font-family: 'Formular';
+        src: url('https://miro.com/app/static/static/fonts/general/FormularRegular/formular-regular.4b9930.woff2');
+      }
+	  
+      body {
+        font-family: 'Formular';
+        overflow: scroll;
+        height: 50%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Card shuffle</h1>
+    <p>This plugin makes it possible to simulate a deck of playing cards. Follow these steps:
+    <ul>
+      <li>Create front sides by either making an object containing text or making a group of objects that contains at least one text.</li>
+      <li>Create back sides by either making an object <bold>without any</bold> text or making a group of objects <bold>without any</bold> text.</li>
+      <li>Make sure the number of back sides is the same as the number of front sides.</li>
+      <li>When creating card sides do not use 'Bring to front' or 'Send to back', the plugin will ignore those when shuffling the cards.</li>
+      <li>Select all front and back sides that will together form a card deck.</li>
+      <li>Press 'cardshuffle'.</li>
+      <li>Deselect the deck.</li>
+    </ul></p>
+    <p>The result will be a stack of cards with alternating back and front sides, with the front sides in random order. Every time you use 'cardshuffle' the
+    deck will be stacked and shuffled. You can now select the top (back) side, move it away to show the first front side.
+    Repeat until the deck is empty.</p>
+    <p>Note: an object contains text when it's a text object or an object containing text (for example a sticky note or a shape).</p>
+  </body>
+</html>
