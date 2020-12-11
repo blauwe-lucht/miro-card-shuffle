@@ -191,7 +191,7 @@
         extensionPoints: {
           bottomBar: {
             title: 'CardShuffle',
-            svgIcon: '<polygon points="12,2 18,12 12,22 6,12" style="fill:black;stroke:black;stroke-width:1"/>',
+            svgIcon: '<polygon points="12,2 18,12 12,22 6,12" style="stroke-width:1" stroke="currentColor" fill="currentColor"/>',
             onClick: async() => {
               var selectedWidgets = await miro.board.selection.get();
               if (!selectedWidgets || selectedWidgets.length == 0) {
