@@ -195,8 +195,7 @@
             onClick: async() => {
               var selectedWidgets = await miro.board.selection.get();
               if (!selectedWidgets || selectedWidgets.length == 0) {
-                // The url is relative to the root of the site, so we need to specify the full path.
-                miro.board.ui.openLeftSidebar("miro/manual.html");
+                miro.board.ui.openLeftSidebar("manual.html");
                 return;
               }
               var targetX = getMinX(selectedWidgets);
